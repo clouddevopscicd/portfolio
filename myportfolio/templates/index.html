@@ -1,0 +1,42 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Balaji | DevOps Engineer</title>
+    <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-gradient shadow">
+  <div class="container-fluid">
+    <a class="navbar-brand fw-bold" href="#">Balaji's Portfolio</a>
+  </div>
+</nav>
+
+<header class="hero-section text-center text-white d-flex align-items-center justify-content-center">
+  <div>
+    <img src="{{ url_for('static', filename='images/profile.jpg') }}" class="rounded-circle shadow-lg mb-3 profile-img" width="180" alt="Profile">
+    <h1 class="display-3 fw-bold animate-text">Hi, I'm Balaji</h1>
+    <p class="lead animate-subtext">DevOps Engineer passionate about automation, cloud, and CI/CD pipelines.</p>
+    <div class="mt-4">
+        <a href="#" class="btn btn-warning btn-lg mx-2 btn-animated">Download Resume</a>
+        <a href="#" class="btn btn-info btn-lg mx-2 btn-animated">Projects</a>
+        <a href="#" class="btn btn-success btn-lg mx-2 btn-animated">Contact</a>
+    </div>
+  </div>
+</header>
+
+<section class="container mt-5 about-section">
+  <h2 class="mb-4 text-center fw-bold">About Me</h2>
+  <p class="text-center">I am a DevOps Engineer with expertise in AWS, Kubernetes, Docker, CI/CD automation, and infrastructure as code. I thrive on building scalable, reliable solutions and streamlining development pipelines.</p>
+</section>
+
+<footer class="footer text-white text-center py-3 mt-5">
+  &copy; 2025 Balaji | DevOps Portfolio
+</footer>
+
+<script src="{{ url_for('static', filename='vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+</body>
+</html>

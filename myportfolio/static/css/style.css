@@ -1,0 +1,20 @@
+
+body { margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; background-color: #f0f2f5; }
+.navbar { background: linear-gradient(90deg, #0f2027, #203a43, #2c5364); }
+.hero-section {
+    background: linear-gradient(135deg, #1e3c72, #2a5298);
+    height: 100vh;
+    flex-direction: column;
+    padding: 2rem;
+    animation: fadeIn 1s ease-in;
+}
+.profile-img { border: 4px solid #fff; transition: transform 0.3s; }
+.profile-img:hover { transform: scale(1.1); }
+.animate-text { animation: slideIn 1s ease-out; }
+.animate-subtext { animation: fadeIn 2s ease-in; }
+.btn-animated { transition: transform 0.2s, box-shadow 0.2s; }
+.btn-animated:hover { transform: scale(1.05); box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+.about-section { max-width: 800px; margin: 0 auto; animation: fadeIn 2s ease-in; }
+.footer { background: linear-gradient(90deg, #0f2027, #203a43, #2c5364); }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }

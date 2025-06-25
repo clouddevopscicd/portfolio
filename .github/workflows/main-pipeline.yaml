@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [ 3.10, 3.11, 3.12 ]
+        python-version: [ 3.10, 3.11, 3.12 ]  # 3.1 removed
 
     steps:
       - name: Checkout code
@@ -39,21 +39,24 @@ jobs:
           pip install -r requirements.txt
           pip install flake8 pytest
 
+      - name: Set PYTHONPATH
+        run: echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
+
       - name: Lint Application
         run: |
           set -e
-          flake8 myportfolio tests
+          flake8 .
 
       - name: Run Unit Tests
         run: |
           set -e
-          export PYTHONPATH=$(pwd)
           pytest tests
 
   sonarqube-analysis:
     name: SonarQube Static Analysis & Quality Gate
     runs-on: ubuntu-latest
     needs: build-and-test
+    if: always()  # Run regardless of matrix failures
 
     steps:
       - name: Checkout code
@@ -77,6 +80,7 @@ jobs:
     name: Build Docker Image, Scan with Trivy, Push to Registry
     runs-on: ubuntu-latest
     needs: sonarqube-analysis
+    if: always()
 
     steps:
       - name: Checkout code
@@ -116,6 +120,7 @@ jobs:
     name: Deploy Docker Image on RedHat VM
     runs-on: self-hosted
     needs: docker-build-scan
+    if: always()
 
     steps:
       - name: Docker Login

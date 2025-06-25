@@ -38,12 +38,12 @@ jobs:
       - name: Lint code
         run: |
           set -e
-          flake8 myportfolio
+          flake8 .
 
       - name: Run tests
         run: |
           set -e
-          pytest
+          pytest test
 
   sonarqube-static-analysis:
     runs-on: ubuntu-latest

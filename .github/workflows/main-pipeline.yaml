@@ -6,13 +6,10 @@ on:
   pull_request:
     branches: [ main ]
 
-# Setting up Global Variables
 env:
   IMAGE_NAME: ${{ github.repository }}
   REGISTRY: docker.io/${{ vars.DOCKER_USERNAME }}
-  PYTHON_VERSION: 3.11
 
-# Defining Jobs
 jobs:
 
   build-and-test:
@@ -24,10 +21,10 @@ jobs:
         python-version: [ 3.9, 3.10, 3.11 ]
 
     steps:
-      - name: Code checkout using checkout@v4
+      - name: Code checkout
         uses: actions/checkout@v4
 
-      - name: Python setup
+      - name: Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
@@ -43,7 +40,7 @@ jobs:
           set -e
           flake8 myportfolio
 
-      - name: Run pytest
+      - name: Run tests
         run: |
           set -e
           pytest
@@ -56,7 +53,7 @@ jobs:
       - name: Code checkout
         uses: actions/checkout@v4
 
-      - name: Performing SonarQube static code analysis
+      - name: SonarQube static analysis
         uses: sonarsource/sonarqube-scan-action@v2
         with:
           projectBaseDir: .
@@ -76,7 +73,7 @@ jobs:
     needs: sonarqube-static-analysis
 
     steps:
-      - name: Code checkout for Docker build and deploy
+      - name: Code checkout
         uses: actions/checkout@v4
 
       - name: Setup Docker Buildx

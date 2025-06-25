@@ -1,11 +1,11 @@
 import os
 import sys
 import pytest
-from app import app  # Import your Flask app
 
-
-# Add project root to Python path for proper module import
+# Ensure project root is in sys.path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from app import app  # Now imports your local app.py, not global site-packages
 
 
 @pytest.fixture

@@ -1,11 +1,12 @@
-import sys
 import os
+import sys
 import pytest
+from app import app  # Import your Flask app
+
 
 # Add project root to Python path for proper module import
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from app import app  # Import your Flask app
 
 @pytest.fixture
 def client():
@@ -13,6 +14,7 @@ def client():
    app.config['TESTING'] = True
    with app.test_client() as client:
       yield client
+
 
 def test_home_page(client):
    """Test homepage route returns 200 and contains basic HTML."""

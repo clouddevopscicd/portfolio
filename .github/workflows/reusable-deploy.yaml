@@ -1,0 +1,10 @@
+name: Reusable Template
+
+on:
+  workflow_call:
+
+jobs:
+  dummy:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Placeholder reusable workflow"

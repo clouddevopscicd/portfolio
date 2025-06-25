@@ -42,11 +42,12 @@ jobs:
       - name: Lint Application
         run: |
           set -e
-          flake8 .
+          flake8 myportfolio tests
 
       - name: Run Unit Tests
         run: |
           set -e
+          export PYTHONPATH=$(pwd)
           pytest tests
 
   sonarqube-analysis:

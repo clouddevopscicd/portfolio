@@ -54,9 +54,8 @@ jobs:
 
   sonarqube-analysis:
     name: SonarQube Static Analysis & Quality Gate
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: build-and-test
-    if: always()  # Run regardless of matrix failures
 
     steps:
       - name: Checkout code
@@ -78,9 +77,8 @@ jobs:
 
   docker-build-scan:
     name: Build Docker Image, Scan with Trivy, Push to Registry
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: sonarqube-analysis
-    if: always()
 
     steps:
       - name: Checkout code
@@ -105,7 +103,8 @@ jobs:
           set -e
           trivy image -f json -o trivy-report.json $REGISTRY/$IMAGE_NAME:${{ github.sha }}
 
-      - name: Upload Trivy Report
+      - name: Upload Trivy Report (Runs Always)
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: trivy-report
@@ -120,7 +119,6 @@ jobs:
     name: Deploy Docker Image on RedHat VM
     runs-on: self-hosted
     needs: docker-build-scan
-    if: always()
 
     steps:
       - name: Docker Login

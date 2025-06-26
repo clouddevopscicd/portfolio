@@ -2,9 +2,9 @@ name: CICD pipeline with Github Actions Strategy (Build, Test, SonarQube, Docker
 
 on:
   push:
-    branches: [ develop, release ]
+    branches: [ main, release ]
   pull_request:
-    branches: [ develop, release ]
+    branches: [ main, release ]
   workflow_dispatch:
 
 env:

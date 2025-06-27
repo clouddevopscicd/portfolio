@@ -1,20 +1,26 @@
-FROM python:3.11-slim
+# Use official Python ARM64-compatible slim image
+FROM --platform=linux/arm64 python:3.11-slim
 
-# Set working directory inside container
+# Set working directory
 WORKDIR /app
 
-# Copy requirement file and install dependencies
+# Install system dependencies (optional but good for stability)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential gcc \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements and install dependencies
 COPY requirements.txt .
-RUN pip install -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Ensure gunicorn is installed, in case requirements.txt lacks it
-RUN pip install gunicorn
+# Ensure gunicorn is installed (safety net)
+RUN pip install --no-cache-dir gunicorn
 
-# Copy entire project into container
+# Copy project files
 COPY . .
 
-# Expose port for app
+# Expose port
 EXPOSE 8000
 
-# Start the app with gunicorn
+# Run app using Gunicorn, compatible with ARM64
 CMD ["gunicorn", "-b", "0.0.0.0:8000", "app:app"]

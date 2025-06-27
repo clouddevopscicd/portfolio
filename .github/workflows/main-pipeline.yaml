@@ -1,130 +1,46 @@
-name: CICD pipeline with SonarCloud, Docker, Trivy, Deploy
+docker-build-scan:
+  name: Build Docker Image, Scan with Trivy, Push to Registry
+  runs-on: ubuntu-latest
+  needs: sonarcloud-analysis
 
-on:
-  push:
-    branches: [ main, release ]
-  pull_request:
-    branches: [ main, release ]
-  workflow_dispatch:
+  steps:
+    - uses: actions/checkout@v4
 
-env:
-  IMAGE_NAME: ${{ github.repository }}
-  REGISTRY: docker.io/${{ vars.DOCKER_USERNAME }}
+    - name: Verify Docker and Install Trivy
+      run: |
+        set -e
+        docker --version
+        sudo systemctl start docker || true
+        wget https://github.com/aquasecurity/trivy/releases/download/v0.63.0/trivy_0.63.0_Linux-64bit.tar.gz
+        tar zxvf trivy_0.63.0_Linux-64bit.tar.gz
+        sudo mv trivy /usr/local/bin/
+        trivy --version
 
-jobs:
+    - name: Setup Docker Buildx
+      uses: docker/setup-buildx-action@v2
 
-  build-and-test:
-    name: Build, Lint, Test with Matrix
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: [ 3.11, 3.12 ]
+    - name: Docker Login
+      uses: docker/login-action@v2
+      with:
+        username: ${{ vars.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
 
-    steps:
-      - uses: actions/checkout@v4
+    - name: Build Docker Image
+      run: |
+        set -e
+        docker build -t $REGISTRY/$IMAGE_NAME:${{ github.sha }} .
 
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python-version }}
+    - name: Trivy Scan
+      run: |
+        set -e
+        trivy image --severity CRITICAL,HIGH --exit-code 0 -f json -o trivy-report.json $REGISTRY/$IMAGE_NAME:${{ github.sha }}
 
-      - name: Install Dependencies
-        run: |
-          set -e
-          pip install -r requirements.txt
-          pip install flake8 pytest
+    - name: Upload Trivy Report
+      uses: actions/upload-artifact@v4
+      with:
+        name: trivy-report
+        path: trivy-report.json
 
-      - name: Set PYTHONPATH for Tests
-        run: |
-          echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
-          echo "✅ PYTHONPATH set to $PWD"
-
-      - name: Lint & Run Unit Tests
-        run: |
-          set -e
-          flake8 .
-          pytest tests
-
-  sonarcloud-analysis:
-    name: SonarCloud Static Analysis
-    runs-on: ubuntu-latest
-    needs: build-and-test
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarqube-scan-action@v5.0.0
-        with:
-          projectBaseDir: .
-          args: >
-            -Dsonar.organization=clouddevopscicd
-            -Dsonar.projectKey=clouddevopscicd_portfolio
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_GITHUB_USERTOKEN }}
-
-  docker-build-scan:
-    name: Build Docker Image, Scan with Trivy, Push to Registry
-    runs-on: ubuntu-latest
-    needs: sonarcloud-analysis
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install Docker & Trivy
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y docker.io wget
-          sudo systemctl start docker
-          wget https://github.com/aquasecurity/trivy/releases/download/v0.63.0/trivy_0.63.0_Linux-64bit.tar.gz
-          tar zxvf trivy_0.63.0_Linux-64bit.tar.gz
-          sudo mv trivy /usr/local/bin/
-          trivy --version
-          docker --version
-
-      - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
-      - name: Docker Login
-        uses: docker/login-action@v2
-        with:
-          username: ${{ vars.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Build Docker Image
-        run: |
-          set -e
-          docker build -t $REGISTRY/$IMAGE_NAME:${{ github.sha }} .
-
-      - name: Trivy Scan
-        run: |
-          set -e
-          trivy image --severity CRITICAL,HIGH --exit-code 0 -f json -o trivy-report.json $REGISTRY/$IMAGE_NAME:${{ github.sha }}
-
-      - name: Upload Trivy Report
-        uses: actions/upload-artifact@v4
-        with:
-          name: trivy-report
-          path: trivy-report.json
-
-      - name: Push Docker Image
-        run: |
-          docker push $REGISTRY/$IMAGE_NAME:${{ github.sha }}
-
-  deploy-to-vm:
-    name: Deploy on RedHat VM
-    runs-on: ubuntu-latest
-    needs: docker-build-scan
-
-    steps:
-      - name: Docker Login
-        run: |
-          docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Deploy Container
-        run: |
-          docker pull $REGISTRY/$IMAGE_NAME:${{ github.sha }}
-          docker stop app || true
-          docker rm app || true
-          docker run -d -p 8000:8000 --name app $REGISTRY/$IMAGE_NAME:${{ github.sha }}
+    - name: Push Docker Image
+      run: |
+        docker push $REGISTRY/$IMAGE_NAME:${{ github.sha }}

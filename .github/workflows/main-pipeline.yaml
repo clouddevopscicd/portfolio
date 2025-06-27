@@ -73,7 +73,7 @@ jobs:
 
   docker-build-scan:
     name: Build Docker Image (ARM64), Scan with Trivy, Push to Registry
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     needs: sonarcloud-analysis
 
     steps:
@@ -119,7 +119,7 @@ jobs:
 
   deploy-to-vm:
     name: Deploy on RedHat VM (ARM64)
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     needs: docker-build-scan
 
     steps:

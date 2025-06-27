@@ -80,6 +80,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Verify Docker & Trivy Setup
+        run: |
+          set -e
+          docker --version || { echo "🚨 Docker not installed or not running"; exit 1; }
+          trivy --version || { echo "🚨 Trivy not installed or not working"; exit 1; }
+          echo "✅ Docker and Trivy setup confirmed"
+
       - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@v2
 
@@ -89,27 +96,33 @@ jobs:
           username: ${{ vars.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build Docker Image
+      - name: Build Docker Image with Logs
         run: |
           set -e
+          echo "🚀 Building Docker Image: $REGISTRY/$IMAGE_NAME:${{ github.sha }}"
           docker build -t $REGISTRY/$IMAGE_NAME:${{ github.sha }} .
+          echo "✅ Docker Image build complete"
 
-      - name: Trivy Vulnerability Scan
+      - name: Run Trivy Vulnerability Scan with Logs
         run: |
           set -e
-          trivy image -f json -o trivy-report.json $REGISTRY/$IMAGE_NAME:${{ github.sha }}
+          echo "🔍 Starting Trivy Scan on $REGISTRY/$IMAGE_NAME:${{ github.sha }}"
+          trivy image --severity CRITICAL,HIGH --exit-code 1 -f json -o trivy-report.json $REGISTRY/$IMAGE_NAME:${{ github.sha }}
+          echo "✅ Trivy Scan completed, report saved"
 
-      - name: Upload Trivy Report (Runs Always)
+      - name: Upload Trivy Report (Always Runs)
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: trivy-report
           path: trivy-report.json
 
-      - name: Push Docker Image
+      - name: Push Docker Image with Logs
         run: |
           set -e
+          echo "📦 Pushing Docker Image to $REGISTRY/$IMAGE_NAME:${{ github.sha }}"
           docker push $REGISTRY/$IMAGE_NAME:${{ github.sha }}
+          echo "✅ Docker Image pushed successfully"
 
   deploy-to-vm:
     name: Deploy Docker Image on RedHat VM
@@ -122,10 +135,14 @@ jobs:
           set -e
           docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Pull & Run Container
+      - name: Pull & Run Container with Logs
         run: |
           set -e
+          echo "📥 Pulling Docker Image: $REGISTRY/$IMAGE_NAME:${{ github.sha }}"
           docker pull $REGISTRY/$IMAGE_NAME:${{ github.sha }}
+          echo "🛑 Stopping and removing old container if exists"
           docker stop app || true
           docker rm app || true
+          echo "🚀 Running new container on port 8000"
           docker run -d -p 8000:8000 --name app $REGISTRY/$IMAGE_NAME:${{ github.sha }}
+          echo "✅ Application container is running"

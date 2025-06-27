@@ -75,13 +75,9 @@ jobs:
           echo "SonarQube not ready after timeout."
           exit 1
 
-      - name: SonarQube Scan with Timeout
-        uses: sonarsource/sonarqube-scan-action@v2
-        with:
-          projectBaseDir: .
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+      - name: Run SonarQube Scanner with Debug
+        run: |
+          sonar-scanner -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }} -Dsonar.login=${{ secrets.SONAR_TOKEN }} -X
         timeout-minutes: 5
 
       - name: SonarQube Quality Gate Check

@@ -1,4 +1,4 @@
-name: CICD pipeline with SonarCloud, Docker (ARM64), Trivy, Deploy
+name: CICD pipeline with SonarCloud, Docker (Multi-Arch), Trivy, Deploy
 
 on:
   push:
@@ -64,7 +64,7 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_GITHUB_USERTOKEN }}
 
   docker-build-scan:
-    name: Build ARM64 Docker Image, Scan with Trivy, Push to Registry
+    name: Build Multi-Arch Docker Image, Scan with Trivy, Push to Registry
     runs-on: ubuntu-latest
     needs: sonarcloud-analysis
 
@@ -84,7 +84,7 @@ jobs:
 
       - name: Create Multi-Arch Builder
         run: |
-          docker buildx create --use --name multiarch-builder
+          docker buildx create --use --name multiarch-builder || true
           docker buildx inspect --bootstrap
 
       - name: Docker Login
@@ -93,17 +93,17 @@ jobs:
           username: ${{ vars.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build & Push ARM64 Docker Image
+      - name: Build & Push Multi-Arch Docker Image (ARM64 & AMD64)
         run: |
           set -e
-          echo "🚀 Building ARM64 Docker Image: $REGISTRY/$IMAGE_NAME:${{ github.sha }}"
-          docker buildx build --platform linux/arm64 -t $REGISTRY/$IMAGE_NAME:${{ github.sha }} -t $REGISTRY/$IMAGE_NAME:latest . --push
+          echo "🚀 Building Multi-Arch Docker Image: $REGISTRY/$IMAGE_NAME:latest"
+          docker buildx build --platform linux/amd64,linux/arm64 -t $REGISTRY/$IMAGE_NAME:latest . --push
 
       - name: Trivy Scan
         run: |
           set -e
-          echo "🔍 Running Trivy Scan on $REGISTRY/$IMAGE_NAME:${{ github.sha }}"
-          trivy image --severity CRITICAL,HIGH --exit-code 0 -f json -o trivy-report.json $REGISTRY/$IMAGE_NAME:${{ github.sha }}
+          echo "🔍 Running Trivy Scan on $REGISTRY/$IMAGE_NAME:latest"
+          trivy image --severity CRITICAL,HIGH --exit-code 0 -f json -o trivy-report.json $REGISTRY/$IMAGE_NAME:latest
 
       - name: Upload Trivy Report
         uses: actions/upload-artifact@v4
@@ -112,7 +112,7 @@ jobs:
           path: trivy-report.json
 
   deploy-to-vm:
-    name: Deploy ARM64 Docker Image on RedHat aarch64 VM
+    name: Deploy Latest Docker Image on RedHat aarch64 VM
     runs-on: self-hosted
     needs: docker-build-scan
 
@@ -125,14 +125,14 @@ jobs:
       - name: Deploy Container with Latest Tag
         run: |
           set -e
-          echo "📥 Pulling latest ARM64 Docker image"
+          echo "📥 Pulling latest Docker image"
           docker pull $REGISTRY/$IMAGE_NAME:latest
-          
+
           echo "🛑 Stopping old container if exists"
           docker stop portfolio || true
           docker rm portfolio || true
-          
+
           echo "🚀 Starting new container"
           docker run -d -p 8000:8000 --name portfolio $REGISTRY/$IMAGE_NAME:latest
-          
-          echo "✅ Application container is running"
+
+         
